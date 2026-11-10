@@ -13,3 +13,21 @@
         Run/Save
         Source Control
         Enter commit msg, and save. Then Sync.
+
+11/10/2026
+    Signed up for free API key with EIA and downloaded requests and python=dotenv to talk to websites and APIs and load secrets from a file
+
+max(rows, key=lambda row:rows['values'])
+    Identify the row with the largest value in a given column, in this case 'values'. 
+
+Compared Demand to Demand Forecast
+    After assigning D, DF 'type' to their respective lists, had to come up with a way to compare the Demand to Forecasted Demand based on period (day, hour). Inital instinct was to start with each Demand row, find its period value, and then loop through every Forecast row until the matching period value was found. Because Forecast list is looped through every time for each Demand period value, this is an inefficienct process. Rather, the following solution is preferable: Create a dictionary based off of Demand Period that assigns a ["period", "value"].
+    Findings: On average, Demand was greater than forecast by 285 MW Hours (underforecasting for this time period). In the industry, this is the opposite of conservative. Conservative forecasting would mean that the forecasting is on average GREATER than the demand because more backup generation is available -> the forecast slightly underestimated demand.
+    Python Dictionary/List takeaways:
+        [] is a list, accessed by position.
+        {} is a dictionary, accessed by a key (matching name)
+            my_dict[key] = value adds one entry
+            my_dict = {} replaces the whole dictionary
+        WHEN CONFUSED ABOUT SHAPE use print(len(my_dict))
+        API data is usually a list of dictionaries. Each hour is a dictionary, and the hours are sotred as a list
+
