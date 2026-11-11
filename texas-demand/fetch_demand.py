@@ -1,6 +1,7 @@
 import os
 import requests
 import pandas as pd
+import numpy as np
 from dotenv import load_dotenv
 
 # Load the API key from the .env file
@@ -14,7 +15,7 @@ params = {
     "frequency": "hourly",
     "data[0]": "value",
     "facets[respondent][]": "ERCO",   # ERCOT's code at EIA
-    "facets[type][]": ["D", 'DF'],                        # D = demand
+    "facets[type][]": "D",                        # D = demand
     "start": "2026-11-01T00",
     "end": "2026-11-08T00",
     "sort[0][column]": "period",
@@ -29,57 +30,53 @@ data = response.json()
 
 # Dig into the response and print the first few hours
 rows = data["response"]["data"]
-#print(f"Got {len(rows)} hours of data")
 
+df = pd.DataFrame(rows)
+#print(df.columns)
 # Differentiating between 'Demand' and 'Demand Forecast' based off of "type"
 
-demand_rows = []
-forecast_rows = []
+# Which hour of the day has the highest average demand?
 
-for row in rows[:]:
-    if row['type'] == 'D':
-        demand_rows.append(row)
-    elif row['type'] == "DF":
-        forecast_rows.append(row)
+# Sort dataset by hour of the day
+# Time Stamps are 24 hours (tt - TT) 
+# formatted 2026-11-01(tt), need to remove first
 
-# Find out if "values" column contains str (text) or integers/values
+df_hours = df.copy()
 
-# print(type(demand_rows[0]['value']))
-#print(len(demand_rows), len(forecast_rows))
-# Cells in "values" column contain str, must convert via int() or float() during calculation
+df_hours['Hour'] = df_hours['period'].str.split('T').str[1]
 
-# define forecast dictionary and assign keys -> assigning keys prevents the previous addition from being overwritten by the next addition 
+# Now have Time of Day column, average out values by Time of Day
+df_hours['value'] = df['value'].astype(int)
+x = df_hours.groupby(['Hour'])['value'].mean()
 
-forecast_by_period = {}
-timestamp = 'period'
-value = 'value'
+# Better approach would be to work with TimeZone directly :
 
-for forecast_row in forecast_rows:
-    forecast_by_period[forecast_row[timestamp]] = int(forecast_row[value])
+df_timezone = df.copy()
 
-differences = []
+df_timezone['Date Time'] = pd.to_datetime(df_timezone['period'], utc = 'True').dt.tz_convert('America/Chicago')
+df_timezone['value'] = pd.to_numeric(df_timezone['value'], errors = 'coerce').astype('Int64')
+df_timezone['Time of Day'] = df_timezone['Date Time'].dt.hour
 
-for demand_row in demand_rows:
-    match_val = demand_row[timestamp]
+y = df_timezone.groupby(df_timezone['Time of Day'])['value'].mean()
 
-    if match_val in forecast_by_period:
-        difference = int(demand_row[value]) - forecast_by_period[match_val]
+y1 = y.idxmax()
 
-    differences.append({timestamp: match_val, "result": difference})
+# What was the peak demand hour of the week?
 
+z = df_timezone.loc[df_timezone['value'].idxmax()]
 
-total = 0
-for item in differences:
-    total = total + item['result']
+#print(z)
 
-average = total / len(differences)
+#How does a weekday compare with the weekend?
 
-print (average)
-# Finding the maximum value of Demand
+#Convert 'period' to day of the week
 
-# max_row = max(rows, key=lambda row:row['value'])
+df_timezone['Day of the Week'] = df_timezone['Date Time'].dt.day_of_week
 
-# print(max_row)
+df_timezone['Week.End'] = np.where((df_timezone['Day of the Week'] == 5) | (df_timezone['Day of the Week'] == 6), 'Weekend', "Weekday")
 
-#for row in rows[:169]:
-    #print(row["period"], row["value"], row["value-units"])
+t = df_timezone.groupby(df_timezone['Week.End'])['value'].mean()
+
+d = df_timezone.groupby(df_timezone['Day of the Week'])['value'].mean()
+
+print(t)
