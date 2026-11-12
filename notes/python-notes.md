@@ -31,3 +31,12 @@ Compared Demand to Demand Forecast
         WHEN CONFUSED ABOUT SHAPE use print(len(my_dict))
         API data is usually a list of dictionaries. Each hour is a dictionary, and the hours are sotred as a list
 
+11/11/2026
+    Used pandas/Keith Galli video to answer the following:
+    Which hour of the day had highest demand per week?
+    Which hour had peak demand during the week?
+    How does a weekday to the weekend?
+    Some useful commands:
+        pd.to_datetime()
+        .groupby(df['key_to_index'])['which_column_looking_at'].mean()
+        .idxmax() = returns cell in index column with highest value of another column (max tells you highest value, idxmax tells you where highest value)
